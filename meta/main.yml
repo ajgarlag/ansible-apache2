@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Antonio J. García Lagar
+  description: Ansible role to install and configure apache2
+  license: MIT
+  min_ansible_version: 1.7
+  platforms:
+    - name: Ubuntu
+      versions:
+        - lucid
+        - precise
+    - name: Debian
+      versions:
+        - wheezy
+  categories:
+    - system
+    - web
+dependencies: []

@@ -1,0 +1,130 @@
+---
+- name: Installing apache2 packages
+  apt:
+    pkg: '{{ item }}'
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  with_items:
+    - apache2
+    - ssl-cert
+
+- name: Enabling HTTPS VirtualHosts
+  lineinfile:
+    dest: /etc/apache2/ports.conf
+    line: "    NameVirtualHost *:443"
+    insertafter: 'mod_ssl\.c'
+  notify:
+    - restart apache2
+
+- name: Configuring default HTTPS vhost
+  replace:
+    regexp: '_default_:443'
+    replace: '*:443'
+    dest: /etc/apache2/sites-available/default-ssl
+  notify:
+    - reload apache2
+
+- name: Setting up default HTTP vhost
+  file:
+    src: /etc/apache2/sites-available/default
+    path: /etc/apache2/sites-enabled/000-default
+    state: '{% if ajgarlag_apache2_vhost_default_http %}link{% else %}absent{% endif %}'
+  notify:
+    - reload apache2
+
+- name: Setting up default HTTPS vhost
+  file:
+    src: /etc/apache2/sites-available/default-ssl
+    path: /etc/apache2/sites-enabled/000-default-ssl
+    state: '{% if ajgarlag_apache2_vhost_default_https %}link{% else %}absent{% endif %}'
+  notify:
+    - reload apache2
+
+- name: Configuring HTTPS certificate
+  replace:
+    dest: /etc/apache2/sites-available/default-ssl
+    regexp: '{{ item.regexp }}'
+    replace: '{{ item.replace }}'
+  with_items:
+    - regexp: '^(\s*)SSLCertificateFile(\s+.*)$'
+      replace: '\1SSLCertificateFile {{ ajgarlag_apache2_https_cert }}'
+    - regexp: '^(\s*)SSLCertificateKeyFile(\s+.*)$'
+      replace: '\1SSLCertificateKeyFile {{ ajgarlag_apache2_https_key }}'
+    - regexp: '^(\s*)#?SSLCertificateChainFile(\s+.*)$'
+      replace: '\1{% if ajgarlag_apache2_https_chain is not defined%}#{% endif %}SSLCertificateChainFile {{ ajgarlag_apache2_https_chain | default("/etc/apache2/ssl.crt/server-ca.crt") }}'
+  notify:
+    - reload apache2
+
+- name: Configuring log format
+  replace:
+    dest: '{{ item }}'
+    regexp: '(\s*)CustomLog\s+([^\s]+)\s+.*'
+    replace: '\1CustomLog \2 {{ ajgarlag_apache2_log_format }}'
+  with_items:
+    - /etc/apache2/sites-available/default
+    - /etc/apache2/sites-available/default-ssl
+  notify:
+    - reload apache2
+
+- name: Defining vhosts
+  template:
+    src: '{{item.value.template|default("vhost.conf.j2")}}'
+    dest: /etc/apache2/sites-available/{{item.key}}.conf
+    owner: root
+    group: root
+    mode: 0644
+  with_dict: ajgarlag_apache2_vhosts
+  notify:
+    - reload apache2
+
+- name: Enabling defined vhosts
+  file:
+    src: /etc/apache2/sites-available/{{ item }}.conf
+    path: /etc/apache2/sites-enabled/{{ item }}.conf
+    state: link
+  with_items: ajgarlag_apache2_vhosts.keys()
+  notify:
+    - reload apache2
+
+- name: Enabling SSL module
+  apache2_module:
+    name: ssl
+    state: present
+  when: ajgarlag_apache2_vhost_default_https or item.value.ssl
+  with_dict: ajgarlag_apache2_vhosts
+  notify:
+    - restart apache2
+
+- name: Enabling sites
+  file:
+    src: /etc/apache2/sites-available/{{ item }}
+    path: /etc/apache2/sites-enabled/{{ item }}
+    state: link
+  with_items: ajgarlag_apache2_sites_enabled
+  notify:
+    - reload apache2
+
+- name: Disabling sites
+  file:
+    src: /etc/apache2/sites-enabled/{{ item }}
+    state: absent
+  with_items: ajgarlag_apache2_sites_disabled
+  notify:
+    - reload apache2
+
+- name: Enabling modules
+  apache2_module:
+    name: '{{ item }}'
+    state: present
+  with_items: ajgarlag_apache2_modules_enabled
+  notify:
+    - restart apache2
+
+- name: Disabling modules
+  apache2_module:
+    name: '{{ item }}'
+    state: present
+  with_items: ajgarlag_apache2_modules_disabled
+  notify:
+    - restart apache2

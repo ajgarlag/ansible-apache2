@@ -1,0 +1,67 @@
+{% set vhost_name = item.key %}
+{% set vhost = item.value %}
+<VirtualHost *:{% if vhost.ssl|default(false) %}443{% else %}80{% endif %}>
+        ServerName {{ vhost_name }}
+        {% if vhost.serveralias is defined -%}
+        ServerAlias {{ vhost.serveralias }}
+        {% endif -%}
+        ServerAdmin {{ vhost.serveradmin | default('webmaster@localhost') }}
+
+        DocumentRoot {{ vhost.documentroot }}
+        <Directory {{ vhost.documentroot }}>
+                Options -Indexes FollowSymLinks
+                AllowOverride None
+                Order allow,deny
+                allow from all
+        </Directory>
+
+
+        {% set directories = vhost.directories|default({}) %}
+        {% for dir_name, dir_params in directories.iteritems() -%}
+        <Directory {{ dir_name }}>
+
+                Options {{ dir_params.options|default('-Indexes FollowSymLinks') }}
+                AllowOverride {{ dir_params.override|default('None') }}
+                {% for dir_extra in dir_params.extras|default([]) -%}
+                {{ dir_extra }}
+                {% endfor %}
+
+        </Directory>
+
+        {% endfor %}
+
+        {% set aliases = vhost.aliases|default({}) %}
+        {% for alias, alias_directory in aliases.iteritems()|default({}) -%}
+        Alias {{ alias }} {{ alias_directory }}
+        {% endfor %}
+
+        ErrorLog ${APACHE_LOG_DIR}/error.{{ vhost_name }}.log
+        CustomLog ${APACHE_LOG_DIR}/access.{{ vhost_name }}.log {{ajgarlag_apache2_log_format}}
+
+        {% for extra in vhost.extras|default([]) -%}
+        {{ extra }}
+        {% endfor %}
+
+        {% if vhost.ssl|default(false) -%}
+        SSLEngine on
+        SSLCertificateFile {{vhost.ssl_cert|default(ajgarlag_apache2_https_cert)}}
+        SSLCertificateKeyFile {{vhost.ssl_key|default(ajgarlag_apache2_https_key)}}
+        {% if vhost.ssl_key is defined -%}
+        SSLCertificateChainFile {{ vhost.ssl_key }}
+        {% elif vhost.ssl_cert is not defined and ajgarlag_apache2_https_chain is defined -%}
+        SSLCertificateChainFile {{ ajgarlag_apache2_https_chain }}
+        {%- endif %}
+
+        <FilesMatch "\.(cgi|shtml|phtml|php)$">
+                SSLOptions +StdEnvVars
+        </FilesMatch>
+        <Directory /usr/lib/cgi-bin>
+                SSLOptions +StdEnvVars
+        </Directory>
+        BrowserMatch "MSIE [2-6]" \
+                nokeepalive ssl-unclean-shutdown \
+                downgrade-1.0 force-response-1.0
+        BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
+        {% endif %}
+
+</VirtualHost>
