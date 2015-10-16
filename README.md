@@ -8,6 +8,9 @@ Role Variables
 --------------
 
 ```yml
+# Extra packages to install
+ajgarlag_apache2_extra_packages: []
+
 # If true, default HTTP virtual host will be enabled
 ajgarlag_apache2_vhost_default_http: yes
 

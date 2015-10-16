@@ -9,6 +9,14 @@
     - apache2
     - ssl-cert
 
+- name: Installing extra packages
+  apt:
+    pkg: '{{ item }}'
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  with_items: ajgarlag_apache2_extra_packages
+
 - name: Enabling HTTPS VirtualHosts
   lineinfile:
     dest: /etc/apache2/ports.conf
