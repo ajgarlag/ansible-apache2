@@ -41,6 +41,14 @@
   notify:
     - reload apache2
 
+- name: Enabling SSL module for default HTTPS vhost
+  apache2_module:
+    name: ssl
+    state: present
+  when: ajgarlag_apache2_vhost_default_https
+  notify:
+    - restart apache2
+
 - name: Configuring HTTPS certificate
   replace:
     dest: /etc/apache2/sites-available/default-ssl
@@ -87,11 +95,11 @@
   notify:
     - reload apache2
 
-- name: Enabling SSL module
+- name: Enabling SSL module for vhosts
   apache2_module:
     name: ssl
     state: present
-  when: ajgarlag_apache2_vhost_default_https or item.value.ssl
+  when: item.value.ssl
   with_dict: ajgarlag_apache2_vhosts
   notify:
     - restart apache2
