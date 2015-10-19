@@ -31,7 +31,7 @@ ajgarlag_apache2_log_format: combined
 
 # Virtual hosts to define
 ajgarlag_apache2_vhosts: {}
-#  "example.org":
+#  - hostname: example.org
 #    template: custom-template.j2
 #    documentroot: /srv/www/example.org #required for vhost.conf.j2 template
 #    serveralias: www.example.org example.com www.example.com
@@ -81,7 +81,7 @@ Example Playbook
     ajgarlag_apache2_https_key: /etc/ssl/private/example.com.key
     ajgarlag_apache2_log_format: vhost_combined
     ajgarlag_apache2_vhosts:
-      "example.com":
+      - hostname: example.com
         documentroot: /srv/www/example.com
         serveralias: www.example.com
         serveradmin: webmaster@example.com

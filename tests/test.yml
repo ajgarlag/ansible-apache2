@@ -5,7 +5,7 @@
     ajgarlag_apache2_vhost_default_http: yes
     ajgarlag_apache2_vhost_default_https: no
     ajgarlag_apache2_vhosts:
-      "example.com":
+      - hostname: example.com
         documentroot: /var/www
         serveralias: www.example.com
         serveradmin: webmaster@example.com

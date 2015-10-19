@@ -1,14 +1,12 @@
-{% set vhost_name = item.key %}
-{% set vhost = item.value %}
-<VirtualHost *:{% if vhost.ssl|default(false) %}443{% else %}80{% endif %}>
-        ServerName {{ vhost_name }}
-        {% if vhost.serveralias is defined -%}
-        ServerAlias {{ vhost.serveralias }}
+<VirtualHost *:{% if item.ssl|default(false) %}443{% else %}80{% endif %}>
+        ServerName {{ item.hostname }}
+        {% if item.serveralias is defined -%}
+        ServerAlias {{ item.serveralias }}
         {% endif -%}
-        ServerAdmin {{ vhost.serveradmin | default('webmaster@localhost') }}
+        ServerAdmin {{ item.serveradmin | default('webmaster@localhost') }}
 
-        DocumentRoot {{ vhost.documentroot }}
-        <Directory {{ vhost.documentroot }}>
+        DocumentRoot {{ item.documentroot }}
+        <Directory {{ item.documentroot }}>
                 Options -Indexes FollowSymLinks
                 AllowOverride None
                 Order allow,deny
@@ -16,7 +14,7 @@
         </Directory>
 
 
-        {% set directories = vhost.directories|default({}) %}
+        {% set directories = item.directories|default({}) %}
         {% for dir_name, dir_params in directories.iteritems() -%}
         <Directory {{ dir_name }}>
 
@@ -30,25 +28,25 @@
 
         {% endfor %}
 
-        {% set aliases = vhost.aliases|default({}) %}
+        {% set aliases = item.aliases|default({}) %}
         {% for alias, alias_directory in aliases.iteritems()|default({}) -%}
         Alias {{ alias }} {{ alias_directory }}
         {% endfor %}
 
-        ErrorLog ${APACHE_LOG_DIR}/error.{{ vhost_name }}.log
-        CustomLog ${APACHE_LOG_DIR}/access.{{ vhost_name }}.log {{ajgarlag_apache2_log_format}}
+        ErrorLog ${APACHE_LOG_DIR}/error.{{ item.hostname }}.log
+        CustomLog ${APACHE_LOG_DIR}/access.{{ item.hostname }}.log {{ajgarlag_apache2_log_format}}
 
-        {% for extra in vhost.extras|default([]) -%}
+        {% for extra in item.extras|default([]) -%}
         {{ extra }}
         {% endfor %}
 
-        {% if vhost.ssl|default(false) -%}
+        {% if item.ssl|default(false) -%}
         SSLEngine on
-        SSLCertificateFile {{vhost.ssl_cert|default(ajgarlag_apache2_https_cert)}}
-        SSLCertificateKeyFile {{vhost.ssl_key|default(ajgarlag_apache2_https_key)}}
-        {% if vhost.ssl_key is defined -%}
-        SSLCertificateChainFile {{ vhost.ssl_key }}
-        {% elif vhost.ssl_cert is not defined and ajgarlag_apache2_https_chain is defined -%}
+        SSLCertificateFile {{item.ssl_cert|default(ajgarlag_apache2_https_cert)}}
+        SSLCertificateKeyFile {{item.ssl_key|default(ajgarlag_apache2_https_key)}}
+        {% if item.ssl_key is defined -%}
+        SSLCertificateChainFile {{ item.ssl_key }}
+        {% elif item.ssl_cert is not defined and ajgarlag_apache2_https_chain is defined -%}
         SSLCertificateChainFile {{ ajgarlag_apache2_https_chain }}
         {%- endif %}
 
