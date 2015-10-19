@@ -85,21 +85,21 @@
 
 - name: Defining vhosts
   template:
-    src: '{{item.value.template|default("vhost.conf.j2")}}'
-    dest: /etc/apache2/sites-available/{{item.key}}.conf
+    src: '{{item.template|default("vhost.conf.j2")}}'
+    dest: /etc/apache2/sites-available/{{item.hostname}}.conf
     owner: root
     group: root
     mode: 0644
-  with_dict: ajgarlag_apache2_vhosts
+  with_items: ajgarlag_apache2_vhosts
   notify:
     - reload apache2
 
 - name: Enabling defined vhosts
   file:
-    src: /etc/apache2/sites-available/{{ item }}.conf
-    path: /etc/apache2/sites-enabled/{{ item }}.conf
+    src: /etc/apache2/sites-available/{{ item.hostname }}.conf
+    path: /etc/apache2/sites-enabled/{{ item.hostname }}.conf
     state: link
-  with_items: ajgarlag_apache2_vhosts.keys()
+  with_items: ajgarlag_apache2_vhosts
   notify:
     - reload apache2
 
@@ -107,8 +107,8 @@
   apache2_module:
     name: ssl
     state: present
-  when: item.value.ssl
-  with_dict: ajgarlag_apache2_vhosts
+  when: item.ssl
+  with_items: ajgarlag_apache2_vhosts
   notify:
     - restart apache2
 
