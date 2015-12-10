@@ -12,5 +12,11 @@
         ssl: yes
         extras:
           - CustomLog "|/usr/bin/logger -p local2.notice -t apache" combined
+      - hostname: example.org
+        documentroot: /var/www
+        serveralias: www.example.org
+        serveradmin: webmaster@example.org
+        extras:
+          - CustomLog "|/usr/bin/logger -p local2.notice -t apache" combined
   roles:
     - role: ajgarlag.apache2
