@@ -107,7 +107,7 @@
   apache2_module:
     name: ssl
     state: present
-  when: item.ssl
+  when: item.ssl|default("no")
   with_items: ajgarlag_apache2_vhosts
   notify:
     - restart apache2
